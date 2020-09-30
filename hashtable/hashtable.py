@@ -22,14 +22,9 @@ class HashTable:
     """
 
     def __init__(self, capacity):
-        # Keep the capacity at the minimum
-        if capacity < MIN_CAPACITY:
-            capacity = MIN_CAPACITY
-
-        # Set the table length to the minimum capacity
+        # Set the length of the table to capacity
         self.capacity = capacity
         self.table = [None] * capacity
-        self.count = 0
 
     def get_num_slots(self):
         """
@@ -42,7 +37,7 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        return self.count
+        return len(self.table)
 
     def get_load_factor(self):
         """
@@ -51,7 +46,13 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        return self.count / self.capacity
+        total = 0
+
+        for key in self.table:
+            if key is not None:
+                total += 1
+
+        return total / self.capacity
 
     def fnv1(self, key):
         """
@@ -70,11 +71,12 @@ class HashTable:
         Implement this, and/or FNV-1.
         """
         # Your code here
-        hash_val = 5281
+        hash = 5831
 
-        for i in key:
+        for c in key:
             # By using 33, we can spread the numbers evenly
-            hash_val = (hash_val * 33) + ord(i)
+            hash = (hash * 33) + ord(c)
+        return hash
 
     def hash_index(self, key):
         """
@@ -93,10 +95,22 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        index = self.hash_index(key)
 
-        # Modify the existing index with a new value
-        self.table[index] = value
+        # Index for table
+        index = self.hash_index(key)
+        return self.insert_at_head(key, value, index)
+
+    def insert_at_head(self, key, value, index):
+        # Create new node
+        node = HashTableEntry(key, value)
+
+        # If entry at index is empty, assign node as head
+        if self.table[index] is None:
+            self.table[index] = node
+        # If not empty, swap current head and new node
+        else:
+            node.next = self.table[index]
+            self.table[index] = node
 
     def delete(self, key):
         """
@@ -110,7 +124,24 @@ class HashTable:
         index = self.hash_index(key)
 
         # We dont want to erase the index since we want to keep it, but for it to not hav an assigned value
-        self.table[index] = None
+        current = self.table[index]
+
+        if current.key == key:
+            self.table[index] = self.table[index].next
+            return self.table[index]
+
+        prev = current
+        current = current.next
+
+        while current is not None:
+            # if current key is key, change prev.next to current.next. Current node will be deleted
+            if current.key == key:
+                prev.next = current.next
+                return current.value
+
+            else:
+                prev = prev.next
+                current = current.next
 
     def get(self, key):
         """
@@ -124,7 +155,19 @@ class HashTable:
         index = self.hash_index(key)
 
         # Return the searched index using the key
-        return self.table[index]
+        return self.find(key, index)
+
+    def find(self, key, index):
+
+        current = self.table[index]
+        # loop to check chain links in index
+        while current is not None:
+            if current.key == key:
+                return current.value
+
+            current = current.next
+
+        return None
 
     def resize(self, new_capacity):
         """
@@ -134,7 +177,25 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        pass
+
+        # Set new capacity
+        self.capacity = new_capacity
+
+        # Copy of old table
+        old_table = self.table
+
+        # Changing capacity of table
+        self.table = [None] * self.capacity
+
+        for i in old_table:
+            self.put(i.key, i.value)
+
+            current = i.next
+            # Loop to go through chain links at current index if applicable
+            while current is not None:
+                self.put(current.key, current.value)
+
+                current = current.next
 
 
 if __name__ == "__main__":
